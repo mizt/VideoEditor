@@ -1,6 +1,14 @@
 #import <vector>
 #import <string>
 
+namespace HEVCNaluType {
+    const unsigned char P = 1;
+    const unsigned char I = 20;
+    const unsigned char VPS = 32;
+    const unsigned char SPS = 33;
+    const unsigned char PPS = 34;
+}
+
 #define USE_VECTOR
 
 // https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/QTFFChap2/qtff2.html
@@ -218,14 +226,14 @@ namespace MultiTrackQTMovie {
                 return &this->bin;
             }
         
-            moov(std::vector<TrackInfo> *info, std::vector<U64> *frames, std::vector<U64> *chunks, std::vector<bool> *keyframes, unsigned char *sps, U64 sps_size, unsigned char *pps, U64 pps_size) {
+            moov(std::vector<TrackInfo> *info, std::vector<U64> *frames, std::vector<U64> *chunks, std::vector<bool> *keyframes, unsigned char *sps, U64 sps_size, unsigned char *pps, U64 pps_size, unsigned char *vps=nullptr, U64 vps_size=0) {
         #else
         
             NSMutableData *get() {
                 return this->bin;
             }
                 
-            moov(std::vector<TrackInfo> *info, std::vector<U64> *frames, std::vector<U64> *chunks, std::vector<bool> *keyframes, NSData *sps, NSData *pps) {
+            moov(std::vector<TrackInfo> *info, std::vector<U64> *frames, std::vector<U64> *chunks, std::vector<bool> *keyframes, NSData *vps, NSData *sps, NSData *pps) {
         #endif
                 this->reset();
                 
@@ -261,6 +269,8 @@ namespace MultiTrackQTMovie {
                 for(int n=0; n<info->size(); n++) {
                     
                     bool avc1 = (((*info)[n].type)=="avc1")?true:false;
+                    bool hvc1 = (((*info)[n].type)=="hvc1")?true:false;
+                    
                     unsigned int track = n+1;
                     
                     unsigned int TotalFrames = (unsigned int)frames[n].size();
@@ -370,11 +380,15 @@ namespace MultiTrackQTMovie {
                     this->setZero(4);
                     this->setU16(1); // Frame count
                     
-                    if(!avc1) {
-                        this->setCompressorName("'"+((*info)[n].type)+"'"); // 32
+                    if(avc1) {
+                       this->setCompressorName("H.264"); // 32
+                    }
+                    else if(hvc1) {
+                        this->setCompressorName("HEVC"); // 32
                     }
                     else {
-                        this->setCompressorName("H.264"); // 32
+                    
+                        this->setCompressorName("'"+((*info)[n].type)+"'"); // 32
                     }
                     
                     this->setU16(((*info)[n].depth)); // Depth
@@ -412,6 +426,79 @@ namespace MultiTrackQTMovie {
         #endif
                         this->setAtomSize(avcC.second);
                     }
+                    else if(hvc1&&vps&&sps&&pps) {
+                        
+                        Atom hvcC = this->initAtom("hvcC");
+
+                        this->setU8(1);
+                        this->setU8(0);
+                        this->setU32(0);
+                        
+                        this->setU8(0);
+                        this->setU8(0);
+                        this->setU8(0);
+                        this->setU8(0);
+                        this->setU8(0);
+                        this->setU8(0);
+                        
+                        this->setU8(0);
+                        this->setU16(0);
+                        this->setU8(0);
+                        this->setU8(0);
+                        this->setU8(0);
+                        this->setU8(0);
+                        this->setU16(0);
+                        this->setU8(3);
+                        
+                        this->setU8(3); // numOfArrays
+                        
+        #ifdef USE_VECTOR
+                        
+                        this->setU8(1<<7|HEVCNaluType::VPS);
+                        this->setU16(1);
+                        this->setU16(swapU32(*((unsigned int *)vps))&0xFFFF);
+                        unsigned char *bytes = ((unsigned char *)vps)+4;
+                        for(U64 n=0; n<vps_size-4; n++) {
+                            this->bin.push_back(bytes[n]);
+                        }
+                        
+                        
+                        this->setU8(1<<7|HEVCNaluType::SPS);
+                        this->setU16(1);
+                        this->setU16(swapU32(*((unsigned int *)sps))&0xFFFF);
+                        bytes = ((unsigned char *)sps)+4;
+                        for(U64 n=0; n<sps_size-4; n++) {
+                            this->bin.push_back(bytes[n]);
+                        }
+                        
+                        this->setU8(1<<7|HEVCNaluType::PPS);
+                        this->setU16(1);
+                        this->setU16(swapU32(*((unsigned int *)pps))&0xFFFF);
+                        bytes = ((unsigned char *)pps)+4;
+                        for(U64 n=0; n<pps_size-4; n++) {
+                            this->bin.push_back(bytes[n]);
+                        }
+                        
+                        
+        #else
+                        this->setU8(1<<7|HEVCNALUType::VPS);
+                        this->setU16(1);
+                        this->setU16(swapU32(*((unsigned int *)[vps bytes]))&0xFFFF);
+                        [this->bin appendBytes:((unsigned char *)[vps bytes])+4 length:[vps length]-4];
+                        this->setU8(1<<7|HEVCNALUType::SPS);
+                        this->setU16(1);
+                        this->setU16(swapU32(*((unsigned int *)[sps bytes]))&0xFFFF);
+                        [this->bin appendBytes:((unsigned char *)[sps bytes])+4 length:[sps length]-4];
+                        this->setU8(1<<7|HEVCNALUType::PPS);
+                        this->setU16(1);
+                        this->setU16(swapU32(*((unsigned int *)[pps bytes]))&0xFFFF);
+                        [this->bin appendBytes:((unsigned char *)[pps bytes])+4 length:[pps length]-4];
+        #endif
+                        
+                        
+                        
+                        this->setAtomSize(hvcC.second);
+                    }
                     
                     this->initAtom("colr",18);
                     this->setString("nclc");
@@ -423,7 +510,7 @@ namespace MultiTrackQTMovie {
                         this->setU32(144179); // 2.2 = 144179, 1.96 = 128512
                     }
                     
-                    if(!avc1) {
+                    if(!(avc1||hvc1))  {
                         this->initAtom("fiel",10);
                         this->setU16(1<<8);
                         this->initAtom("pasp",16);
@@ -442,7 +529,7 @@ namespace MultiTrackQTMovie {
                     this->setU32(TotalFrames);
                     this->setU32(SampleDelta);
                     
-                    if(avc1) {
+                    if(avc1||hvc1) {
                         
                         unsigned int TotalKeyframes = 0;
                         for(int k=0; k<TotalFrames; k++) {
@@ -481,7 +568,7 @@ namespace MultiTrackQTMovie {
                         this->setU32((unsigned int)frames[n][k]);
                     }
                     
-                    if(avc1) {
+                    if(avc1||hvc1) {
                     
                         this->setAtomSize(stsz.second);
                         Atom stco = this->initAtom("stco");
@@ -531,3 +618,4 @@ namespace MultiTrackQTMovie {
             }
         };
 }
+        
