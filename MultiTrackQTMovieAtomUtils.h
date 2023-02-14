@@ -1,9 +1,12 @@
 #import <vector>
 #import <string>
 
+namespace AVCNaluType {
+    const unsigned char SPS = 7;
+    const unsigned char PPS = 8;
+}
+
 namespace HEVCNaluType {
-    const unsigned char P = 1;
-    const unsigned char I = 20;
     const unsigned char VPS = 32;
     const unsigned char SPS = 33;
     const unsigned char PPS = 34;
