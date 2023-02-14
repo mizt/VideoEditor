@@ -96,7 +96,7 @@ namespace MultiTrackQTMovie {
         #else
                 NSData *bin = ftyp->get();
                 [bin writeToFile:this->_fileName options:NSDataWritingAtomic error:nil];
-                length = [bin length];'
+                length = [bin length];
 
         #endif
                 
