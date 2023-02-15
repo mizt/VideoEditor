@@ -169,13 +169,11 @@ namespace MultiTrackQTMovie {
                     
                     for(int k=begin; k<end-info_offset[3]; k++) {
                         if(swapU32(toU32(moov+k))==this->atom("stsd")) {
-                            
                             info = new TrackInfo;
-                            info->type   = atom(swapU32(toU32(moov+k+info_offset[0])));
+                            info->type = atom(swapU32(toU32(moov+k+info_offset[0])));
                             info->width  = swapU16(toU16(moov+k+info_offset[1]));
                             info->height = swapU16(toU16(moov+k+info_offset[2]));
                             info->depth  = swapU16(toU16(moov+k+info_offset[3]));
-                                                        
                             break;
                         }
                     }
@@ -186,32 +184,48 @@ namespace MultiTrackQTMovie {
                             int offset = 4+1+1+4+6+1+2+1+1+1+1+2+1;
                             for(int k=begin; k<end-4-offset; k++) {
                                 if(swapU32(toU32(moov+k))==atom("hvcC")) {
-                                    
                                     unsigned char *p = moov+k+offset;
                                     unsigned char num = *p++;
-                                    
                                     if(num==3) {
-                                        
                                         while(num--) {
-                                            
                                             unsigned char type = (*p++)&0x7F;
-                                            *p++=0;
-                                            *p++=0;
+                                            p+=2;
                                             unsigned short size = swapU16(toU16(p));
                                             p+=2;
-                                            
                                             this->_ps[num] = new unsigned char[size+4];
-                                            memcpy(this->_ps[num],p-4,size+4);
-                                            
+                                            this->_ps[num][0] = 0;
+                                            this->_ps[num][1] = 0;
+                                            memcpy(this->_ps[num]+2,p-2,size+2);
                                             if(num) p+=size;
-                                            
                                         }
                                     }
                                     break;
                                 }
                             }
                         }
-                        
+                        else if(info->type=="avc1") {
+                            int offset = 6;
+                            for(int k=begin; k<end-4-offset; k++) {
+                                if(swapU32(toU32(moov+k))==atom("avcC")) {
+                                    unsigned char *p = moov+k+offset;
+                                    unsigned short size = swapU16(toU16(p));
+                                    p+=2;
+                                    this->_ps[2] = new unsigned char[size+4];
+                                    this->_ps[2][0] = 0;
+                                    this->_ps[2][1] = 0;
+                                    memcpy(this->_ps[2]+2,p-2,size);
+                                    p+=size;
+                                    p++;
+                                    size = swapU16(toU16(p));
+                                    p+=2;
+                                    this->_ps[1] = new unsigned char[size+4];
+                                    this->_ps[1][0] = 0;
+                                    this->_ps[1][1] = 0;
+                                    memcpy(this->_ps[1]+2,p-2,size);
+                                }
+                            }
+                        }
+                            
                         double fps = 0;
                         for(int k=begin; k<end-(4*4); k++) {
                             if(swapU32(toU32(moov+k))==atom("stts")) {
@@ -271,7 +285,6 @@ namespace MultiTrackQTMovie {
                             }
                             
                             this->_frames.push_back(frames);
-                            
                         }
                     }
                 }
@@ -432,7 +445,7 @@ namespace MultiTrackQTMovie {
                     fclose(this->_fp);
                 }
                 this->_fp = NULL;
-                this->clear();                
+                this->clear();
             }
         
 #endif
