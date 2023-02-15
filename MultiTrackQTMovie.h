@@ -39,7 +39,7 @@ namespace MultiTrackQTMovie {
                 NSDate *date = [NSDate dateWithTimeIntervalSince1970:[timeStampString doubleValue]];
                 NSDateFormatter *format = [[NSDateFormatter alloc] init];
                 [format setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"ja_JP"]];
-                [format setDateFormat:@"yyyy_MM_dd_HH_mm_ss_SSS"];
+                [format setDateFormat:@"yyyy_MMdd_HHmm_ss_SSS"];
     #if TARGET_OS_OSX
                 NSArray *paths = NSSearchPathForDirectoriesInDomains(NSMoviesDirectory,NSUserDomainMask,YES);
     #else
