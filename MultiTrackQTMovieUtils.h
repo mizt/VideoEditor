@@ -1,9 +1,9 @@
 #ifdef EMSCRIPTEN
-    typedef unsigned long long U64;
-    typedef long long S64;
+    typedef unsigned long long u64;
+    typedef long long s64;
 #else
-    typedef unsigned long U64;
-    typedef long S64;
+    typedef unsigned long u64;
+    typedef long s64;
 #endif
 
 namespace MultiTrackQTMovie {
@@ -18,7 +18,7 @@ namespace MultiTrackQTMovie {
 
 #ifdef EMSCRIPTEN
     
-    U64 toU64(unsigned char *p) {
+    u64 toU64(unsigned char *p) {
         U64 p0 = p[0];
         U64 p1 = p[1];
         U64 p2 = p[2];
@@ -38,7 +38,7 @@ namespace MultiTrackQTMovie {
         return p[1]<<8|p[0];
     }
     
-    U64 swapU64(U64 n) {
+    u64 swapU64(u64 n) {
         U64 p0 = (n>>56)&0xFF;
         U64 p1 = (n>>48)&0xFF;
         U64 p2 = (n>>40)&0xFF;
@@ -52,8 +52,8 @@ namespace MultiTrackQTMovie {
     
 #else
     
-    U64 toU64(unsigned char *p) {
-        return *((U64 *)p);
+    u64 toU64(unsigned char *p) {
+        return *((u64 *)p);
     }
     
     unsigned int toU32(unsigned char *p) {
@@ -64,7 +64,7 @@ namespace MultiTrackQTMovie {
         return *((unsigned short *)p);
     }
     
-    U64 swapU64(U64 n) {
+    u64 swapU64(u64 n) {
         return ((n>>56)&0xFF)|(((n>>48)&0xFF)<<8)|(((n>>40)&0xFF)<<16)|(((n>>32)&0xFF)<<24)|(((n>>24)&0xFF)<<32)|(((n>>16)&0xFF)<<40)|(((n>>8)&0xFF)<<48)|((n&0xFF)<<56);
     }
     
@@ -77,5 +77,17 @@ namespace MultiTrackQTMovie {
     unsigned short swapU16(unsigned short n) {
         return ((n>>8)&0xFF)|((n&0xFF)<<8);
     }
-
+    
+    
+    u64 U64(unsigned char *p) {
+        return swapU64(toU64(p));
+    }
+    
+    unsigned int U32(unsigned char *p) {
+        return swapU32(toU32(p));
+    }
+    
+    unsigned short U16(unsigned char *p) {
+        return swapU16(toU16(p));
+    }
 }

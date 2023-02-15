@@ -16,14 +16,14 @@ namespace MultiTrackQTMovie {
             bool _isRecorded = false;
             
             NSFileHandle *_handle;
-            std::vector<U64> *_frames;
+            std::vector<u64> *_frames;
             
             const unsigned int MDAT_LIMIT = (1024*1024*1024)/10; // 0.1 = 100MB
-            U64 _mdat_offset = 0;
+            u64 _mdat_offset = 0;
             NSMutableData *_mdat = nil;
             
-            U64 _chunk_offset = 0;
-            std::vector<U64> *_chunks;
+            u64 _chunk_offset = 0;
+            std::vector<u64> *_chunks;
         
             std::vector<bool> *_keyframes;
             
@@ -57,8 +57,8 @@ namespace MultiTrackQTMovie {
                 if(fileName) this->_fileName = fileName;
                 else this->_fileName = [NSString stringWithFormat:@"%@.mov",this->filename()];
                 this->_info = info;
-                this->_frames = new std::vector<U64>[this->_info->size()];
-                this->_chunks = new std::vector<U64>[this->_info->size()];
+                this->_frames = new std::vector<u64>[this->_info->size()];
+                this->_chunks = new std::vector<u64>[this->_info->size()];
                 this->_keyframes = new std::vector<bool>[this->_info->size()];
             }
         
@@ -129,8 +129,8 @@ namespace MultiTrackQTMovie {
                     
                     if(trackid>=0&&trackid<this->_info->size()) {
                         
-                        U64 size = length;
-                        U64 diff = 0;
+                        u64 size = length;
+                        u64 diff = 0;
                         
                         if(padding&&(length%4!=0)) {
                             diff=(((length+3)>>2)<<2)-length;

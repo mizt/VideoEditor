@@ -39,7 +39,7 @@ namespace MultiTrackQTMovie {
                 unsigned int CreationTime = CFAbsoluteTimeGetCurrent() + kCFAbsoluteTimeIntervalSince1904;
             #endif
                 
-                void setU64(U64 value) {
+                void setU64(u64 value) {
             #ifdef USE_VECTOR
                     bin.push_back((value>>56)&0xFF);
                     bin.push_back((value>>48)&0xFF);
@@ -82,11 +82,11 @@ namespace MultiTrackQTMovie {
             #endif
                 }
         
-                void setZero(U64 length) {
+                void setZero(u64 length) {
             #ifdef USE_VECTOR
-                    for(U64 n=0; n<length; n++) bin.push_back(0);
+                    for(u64 n=0; n<length; n++) bin.push_back(0);
             #else
-                    for(U64 n=0; n<length; n++) [this->bin appendBytes:new unsigned char[1]{0} length:1];
+                    for(u64 n=0; n<length; n++) [this->bin appendBytes:new unsigned char[1]{0} length:1];
             #endif
                 }
                             
@@ -96,7 +96,7 @@ namespace MultiTrackQTMovie {
 }
 
 namespace MultiTrackQTMovie {
-    typedef std::pair<std::string,U64> Atom;
+    typedef std::pair<std::string,u64> Atom;
 }
 
 namespace MultiTrackQTMovie {
@@ -157,9 +157,9 @@ namespace MultiTrackQTMovie {
                 //assert(str.length()<=4);
                 
         #ifdef USE_VECTOR
-                U64 pos = this->bin.size();
+                u64 pos = this->bin.size();
         #else
-                U64 pos = (unsigned int)[bin length];
+                u64 pos = (unsigned int)[bin length];
         #endif
                 this->setU32(size);
                 this->setString(str);
@@ -167,7 +167,7 @@ namespace MultiTrackQTMovie {
                 return std::make_pair(str,pos);
             }
             
-            void setAtomSize(U64 pos) {
+            void setAtomSize(u64 pos) {
         #ifdef USE_VECTOR
                 unsigned int size = (unsigned int)(this->bin.size()-pos);
                 this->bin[pos+0] = (size>>24)&0xFF;
@@ -181,8 +181,8 @@ namespace MultiTrackQTMovie {
             
             void setString(std::string str, unsigned int length=4) {
                 unsigned char *s = (unsigned char *)str.c_str();
-                for(S64 n=0; n<str.length(); n++) this->setU8(s[n]);
-                S64 len = length-str.length();
+                for(s64 n=0; n<str.length(); n++) this->setU8(s[n]);
+                s64 len = length-str.length();
                 if(len>=1) {
                     while(len--) this->setU8(0);
                 }
@@ -229,14 +229,14 @@ namespace MultiTrackQTMovie {
                 return &this->bin;
             }
         
-            moov(std::vector<TrackInfo> *info, std::vector<U64> *frames, std::vector<U64> *chunks, std::vector<bool> *keyframes, unsigned char *sps, U64 sps_size, unsigned char *pps, U64 pps_size, unsigned char *vps=nullptr, U64 vps_size=0) {
+            moov(std::vector<TrackInfo> *info, std::vector<u64> *frames, std::vector<u64> *chunks, std::vector<bool> *keyframes, unsigned char *sps, u64 sps_size, unsigned char *pps, u64 pps_size, unsigned char *vps=nullptr, u64 vps_size=0) {
         #else
         
             NSMutableData *get() {
                 return this->bin;
             }
                 
-            moov(std::vector<TrackInfo> *info, std::vector<U64> *frames, std::vector<U64> *chunks, std::vector<bool> *keyframes, NSData *vps, NSData *sps, NSData *pps) {
+            moov(std::vector<TrackInfo> *info, std::vector<u64> *frames, std::vector<u64> *chunks, std::vector<bool> *keyframes, NSData *vps, NSData *sps, NSData *pps) {
         #endif
                 this->reset();
                 
@@ -411,13 +411,13 @@ namespace MultiTrackQTMovie {
                         
                         this->setU16(swapU32(*((unsigned int *)sps))&0xFFFF);
                         unsigned char *bytes = ((unsigned char *)sps)+4;
-                        for(U64 n=0; n<sps_size-4; n++) {
+                        for(u64 n=0; n<sps_size-4; n++) {
                             this->bin.push_back(bytes[n]);
                         }
                         this->setU8(1); // 1
                         this->setU16(swapU32(*((unsigned int *)pps))&0xFFFF);
                         bytes = ((unsigned char *)pps)+4;
-                        for(U64 n=0; n<pps_size-4; n++) {
+                        for(u64 n=0; n<pps_size-4; n++) {
                             this->bin.push_back(bytes[n]);
                         }
         #else
@@ -461,7 +461,7 @@ namespace MultiTrackQTMovie {
                         this->setU16(1);
                         this->setU16(swapU32(*((unsigned int *)vps))&0xFFFF);
                         unsigned char *bytes = ((unsigned char *)vps)+4;
-                        for(U64 n=0; n<vps_size-4; n++) {
+                        for(u64 n=0; n<vps_size-4; n++) {
                             this->bin.push_back(bytes[n]);
                         }
                         
@@ -470,7 +470,7 @@ namespace MultiTrackQTMovie {
                         this->setU16(1);
                         this->setU16(swapU32(*((unsigned int *)sps))&0xFFFF);
                         bytes = ((unsigned char *)sps)+4;
-                        for(U64 n=0; n<sps_size-4; n++) {
+                        for(u64 n=0; n<sps_size-4; n++) {
                             this->bin.push_back(bytes[n]);
                         }
                         
@@ -478,7 +478,7 @@ namespace MultiTrackQTMovie {
                         this->setU16(1);
                         this->setU16(swapU32(*((unsigned int *)pps))&0xFFFF);
                         bytes = ((unsigned char *)pps)+4;
-                        for(U64 n=0; n<pps_size-4; n++) {
+                        for(u64 n=0; n<pps_size-4; n++) {
                             this->bin.push_back(bytes[n]);
                         }
                         
