@@ -50,10 +50,12 @@ int main(int argc, char *argv[]) {
                         
                         if(!err) {
                             parser = new MultiTrackQTMovie::Parser(command);
-                            srcFrames = parser->length(0);
-                            info.push_back({.width=parser->width(0),.height=parser->height(0),.depth=24,.fps=30.,.type=parser->type(0)});
-                            load = true;
-                            continue;
+                            if(parser->type(0)=="jpeg") {
+                                srcFrames = parser->length(0);
+                                info.push_back({.width=parser->width(0),.height=parser->height(0),.depth=24,.fps=30.,.type=parser->type(0)});
+                                load = true;
+                                continue;
+                            }
                         }
                         
                     }
