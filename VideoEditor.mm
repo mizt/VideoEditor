@@ -15,14 +15,14 @@ NSRegularExpression *regexp(NSString *pattern) {
 int main(int argc, char *argv[]) {
     @autoreleasepool {
         
-        std::vector<MultiTrackQTMovie::TrackInfo> info;
-        MultiTrackQTMovie::Parser *parser = nullptr;
         bool load = false;
-        
-        MultiTrackQTMovie::Recorder *recorder = nullptr;
         
         int srcFrames = 0;
         int dstFrames = 0;
+        
+        std::vector<MultiTrackQTMovie::TrackInfo> info;
+        MultiTrackQTMovie::Recorder *recorder = nullptr;
+        MultiTrackQTMovie::Parser *parser = nullptr;
         
         if(argc==2||argc==3) {
             

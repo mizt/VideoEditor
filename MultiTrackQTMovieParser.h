@@ -13,7 +13,9 @@ namespace MultiTrackQTMovie {
             std::vector<TrackInfo *> _info;
             std::vector<unsigned int> _totalFrames;
             std::vector<std::pair<U64,unsigned int> *> _frames;
-        
+            
+            unsigned char *_ps[3] = {nullptr,nullptr,nullptr};
+            
 #ifdef EMSCRIPTEN
     
             unsigned char *_bytes;
@@ -53,6 +55,13 @@ namespace MultiTrackQTMovie {
 
                 this->reset();
                 
+                if(this->_ps[2]) delete[] this->_ps[2];
+                if(this->_ps[1]) delete[] this->_ps[1];
+                if(this->_ps[0]) delete[] this->_ps[0];
+                
+                this->_ps[2] = nullptr;
+                this->_ps[1] = nullptr;
+                this->_ps[0] = nullptr;
             }
         
         public:
@@ -103,7 +112,6 @@ namespace MultiTrackQTMovie {
                 return 0;
             };
         
-
             unsigned int atom(std::string str) {
                 
 #ifndef EMSCRIPTEN
@@ -173,6 +181,36 @@ namespace MultiTrackQTMovie {
                     }
                     
                     if(info) {
+                        
+                        if(info->type=="hvc1") {
+                            int offset = 4+1+1+4+6+1+2+1+1+1+1+2+1;
+                            for(int k=begin; k<end-4-offset; k++) {
+                                if(swapU32(toU32(moov+k))==atom("hvcC")) {
+                                    
+                                    unsigned char *p = moov+k+offset;
+                                    unsigned char num = *p++;
+                                    
+                                    if(num==3) {
+                                        
+                                        while(num--) {
+                                            
+                                            unsigned char type = (*p++)&0x7F;
+                                            *p++=0;
+                                            *p++=0;
+                                            unsigned short size = swapU16(toU16(p));
+                                            p+=2;
+                                            
+                                            this->_ps[num] = new unsigned char[size+4];
+                                            memcpy(this->_ps[num],p-4,size+4);
+                                            
+                                            if(num) p+=size;
+                                            
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                         
                         double fps = 0;
                         for(int k=begin; k<end-(4*4); k++) {
@@ -244,7 +282,10 @@ namespace MultiTrackQTMovie {
                 }
                 
             }
-
+        
+            unsigned char *vps() { return this->_ps[2]; };
+            unsigned char *sps() { return this->_ps[1]; };
+            unsigned char *pps() { return this->_ps[0]; };
 
 #ifdef EMSCRIPTEN 
         
@@ -391,7 +432,7 @@ namespace MultiTrackQTMovie {
                     fclose(this->_fp);
                 }
                 this->_fp = NULL;
-                this->clear();
+                this->clear();                
             }
         
 #endif
@@ -400,4 +441,5 @@ namespace MultiTrackQTMovie {
 
 };
 
+                                
                                 
