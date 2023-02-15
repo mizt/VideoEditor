@@ -2,12 +2,6 @@
 #import "MultiTrackQTMovie.h"
 #import "MultiTrackQTMovieParser.h"
 
-typedef struct {
-    unsigned short width;
-    unsigned short height;
-    unsigned int frames;
-} Info;
-
 NSRegularExpression *regexp(NSString *pattern) {
     return [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
 }
