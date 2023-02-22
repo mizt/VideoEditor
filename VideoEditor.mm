@@ -2,21 +2,30 @@
 #import "MultiTrackQTMovie.h"
 #import "MultiTrackQTMovieParser.h"
 
+namespace RegExp {
+    
+    NSRegularExpression *regularExpression(NSString *pattern) {
+        return [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
+    }
+    
+    const NSRegularExpression *Number = regularExpression(@"[0-9]+");
+    const NSRegularExpression *Range = regularExpression(@"[0-9]+-[0-9]+");
+    const NSRegularExpression *Repeate = regularExpression(@"[0-9]+x[0-9]+");
+}
+
 namespace VideoEditor {
     
     static const NSArray *supportedCodecs = @[@"jpeg",@"png "];
     
-    NSRegularExpression *regexp(NSString *pattern) {
-        return [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
+    bool match(NSString *command,const NSRegularExpression *regexp) {
+        NSTextCheckingResult *match;
+        match = [regexp firstMatchInString:command options:0 range:NSMakeRange(0,command.length)];
+        return (match&&command.length==match.range.length)?true:false;
     }
     
     NSData *file(NSString *path) {
         return [[NSFileManager defaultManager] contentsAtPath:path];
     }
-    
-    NSRegularExpression *number = regexp(@"[0-9]+");
-    NSRegularExpression *range = regexp(@"[0-9]+-[0-9]+");
-    NSRegularExpression *repeate = regexp(@"[0-9]+x[0-9]+");
     
     unsigned int srcFrames = 0;
     unsigned int dstFrames = 0;
@@ -28,8 +37,13 @@ namespace VideoEditor {
         return recorder;
     }
     
-    void add(MultiTrackQTMovie::Recorder *recorder, MultiTrackQTMovie::Parser *parser, unsigned char *bytes, long length) {
+    void add(MultiTrackQTMovie::Recorder *recorder, MultiTrackQTMovie::Parser *parser, NSData *data) {
+        
         if(recorder) {
+            
+            unsigned char *bytes = (unsigned char *)data.bytes;
+            long length = data.length;
+            
             std::string codecType = parser->type(0);
             if(codecType=="jpeg"||codecType=="png ") {
                 recorder->add((unsigned char *)bytes,length,0,true);
@@ -130,8 +144,7 @@ namespace VideoEditor {
                                 [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&err];
                                 if(!err) {
                                     if(!recorder) recorder = setup(parser,dst,&info);
-                                    NSData *data = file(path);
-                                    add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                                    add(recorder,parser,file(path));
                                     found = true;
                                     break;
                                 }
@@ -141,10 +154,7 @@ namespace VideoEditor {
                     }
                 }
                 
-                NSTextCheckingResult *match;
-                
-                match = [range firstMatchInString:command options:0 range:mask];
-                if(match) {
+                if(match(command,RegExp::Range)) {
                     NSArray *value = [command componentsSeparatedByString:@"-"];
                     if(value.count==2) {
                         int begin = [value[0] intValue];
@@ -153,8 +163,7 @@ namespace VideoEditor {
                             if(end<srcFrames) {
                                 if(!recorder) recorder = setup(parser,dst,&info);
                                 for(int k=begin; k<=end; k++) {
-                                    NSData *data = parser->get(k,0);
-                                    add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                                    add(recorder,parser,parser->get(k,0));
                                 }
                                 continue;
                             }
@@ -163,8 +172,7 @@ namespace VideoEditor {
                             if(begin<srcFrames) {
                                 if(!recorder) recorder = setup(parser,dst,&info);
                                 for(int k=begin; k>=end; k--) {
-                                    NSData *data = parser->get(k,0);
-                                    add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                                    add(recorder,parser,parser->get(k,0));
                                 }
                                 continue;
                             }
@@ -172,8 +180,7 @@ namespace VideoEditor {
                     }
                 }
                 
-                match = [repeate firstMatchInString:command options:0 range:mask];
-                if(match) {
+                if(match(command,RegExp::Repeate)) {
                     NSArray *value = [command componentsSeparatedByString:@"x"];
                     if(value.count==2) {
                         int frame = [value[0] intValue];
@@ -181,26 +188,19 @@ namespace VideoEditor {
                         if(frame<srcFrames) {
                             if(!recorder) recorder = setup(parser,dst,&info);
                             for(int k=0; k<times; k++) {
-                                NSData *data = parser->get(frame,0);
-                                unsigned char *bytes = (unsigned char *)data.bytes;
-                                add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                                add(recorder,parser,parser->get(frame,0));
                             }
                             continue;
                         }
                     }
                 }
                 
-                match = [number firstMatchInString:command options:0 range:mask];
-                if(match) {
-                    if(command.length==match.range.length) {
-                        int frame = [command intValue];
-                        if(frame<srcFrames) {
-                            if(!recorder) recorder = setup(parser,dst,&info);
-                            NSData *data = parser->get(frame,0);
-                            unsigned char *bytes = (unsigned char *)data.bytes;
-                            add(recorder,parser,(unsigned char *)data.bytes,data.length);
-                            continue;
-                        }
+                if(match(command,RegExp::Number)) {
+                    int frame = [command intValue];
+                    if(frame<srcFrames) {
+                        if(!recorder) recorder = setup(parser,dst,&info);
+                        add(recorder,parser,parser->get(frame,0));
+                        continue;
                     }
                 }
             }
