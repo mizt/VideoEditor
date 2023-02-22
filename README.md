@@ -19,5 +19,10 @@ $ ./VideoEditor ./src.mov,320-291,292-351,350-321 ./dst.mov
 | -        | range     |
 | x        | repeat    |
 
+#### Search Path
 
+* ./
+* ~/Movies/
+* ~/Downloads/
+* ~/Documents/
 

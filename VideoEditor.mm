@@ -58,15 +58,28 @@ namespace VideoEditor {
                         
             if([command hasSuffix:@".mov"]) {
                 if(!parser) {
-                                    
+                    
                     NSMutableString *path = [NSMutableString stringWithString:command];
                     
                     if([path hasPrefix:@"~/"]) {
                         [path setString:[path stringByReplacingOccurrencesOfString:@"~/" withString:[NSString stringWithFormat:@"/Users/%@/",NSUserName()]]];
                     }
+                    else if([path rangeOfString:@"/"].location==NSNotFound) {
+                        const NSArray *searchPath = @[
+                            [NSString stringWithFormat:@"./%@",path],
+                            [NSString stringWithFormat:@"/Users/%@/Movies/%@",NSUserName(),path],
+                            [NSString stringWithFormat:@"/Users/%@/Downloads/%@",NSUserName(),path],
+                            [NSString stringWithFormat:@"/Users/%@/Documents/%@",NSUserName(),path]
+                        ];
+                        for(int k=0; k<searchPath.count; k++) {
+                            [path setString:searchPath[k]];
+                            if([[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil]) break;
+                        }
+                    }
                     
                     NSError *err = nil;
                     [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&err];
+                    
                     if(!err) {
                         parser = new MultiTrackQTMovie::Parser(path);
                         codecType = parser->type(0);
