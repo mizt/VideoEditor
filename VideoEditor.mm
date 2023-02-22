@@ -106,7 +106,7 @@ namespace VideoEditor {
                         bool found = false;
                         for(NSString *color in colors) {
                             if([command compare:color]==NSOrderedSame) {
-                                NSString *path = [NSString stringWithFormat:@"%@hvc1/%d/%d/%@.bin",BASE_PATH,parser->width(0),parser->height(0),command];
+                                NSString *path = [NSString stringWithFormat:@"%@%s/%d/%d/%@.bin",BASE_PATH,codecType.c_str(),parser->width(0),parser->height(0),command];
                                 NSError *err = nil;
                                 [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&err];
                                 if(!err) {
