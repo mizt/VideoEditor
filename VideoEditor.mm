@@ -58,11 +58,17 @@ namespace VideoEditor {
                         
             if([command hasSuffix:@".mov"]) {
                 if(!parser) {
-                                        
+                                    
+                    NSMutableString *path = [NSMutableString stringWithString:command];
+                    
+                    if([path hasPrefix:@"~/"]) {
+                        [path setString:[path stringByReplacingOccurrencesOfString:@"~/" withString:[NSString stringWithFormat:@"/Users/%@/",NSUserName()]]];
+                    }
+                    
                     NSError *err = nil;
-                    [[NSFileManager defaultManager] attributesOfItemAtPath:command error:&err];
+                    [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&err];
                     if(!err) {
-                        parser = new MultiTrackQTMovie::Parser(command);
+                        parser = new MultiTrackQTMovie::Parser(path);
                         codecType = parser->type(0);
                         bool isSupport = false;
                         for(int k=0; k<supportedCodecs.count; k++) {
