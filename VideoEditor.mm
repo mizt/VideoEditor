@@ -20,7 +20,6 @@ namespace VideoEditor {
     
     unsigned int srcFrames = 0;
     unsigned int dstFrames = 0;
-    unsigned int P = 0;
     
     const NSString *BASE_PATH = @"./";
 
@@ -111,7 +110,6 @@ namespace VideoEditor {
                                 NSError *err = nil;
                                 [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&err];
                                 if(!err) {
-                                    P = 0;
                                     if(!recorder) recorder = setup(parser,dst,&info);
                                     NSData *data = file(path);
                                     add(recorder,parser,(unsigned char *)data.bytes,data.length);
