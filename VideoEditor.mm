@@ -2,144 +2,225 @@
 #import "MultiTrackQTMovie.h"
 #import "MultiTrackQTMovieParser.h"
 
-NSRegularExpression *regexp(NSString *pattern) {
-    return [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
-}
+namespace VideoEditor {
+    
+    static const NSArray *supportedCodecs = @[@"jpeg",@"png "];
+    
+    NSRegularExpression *regexp(NSString *pattern) {
+        return [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
+    }
+    
+    NSData *file(NSString *path) {
+        return [[NSFileManager defaultManager] contentsAtPath:path];
+    }
+    
+    NSRegularExpression *number = regexp(@"[0-9]+");
+    NSRegularExpression *range = regexp(@"[0-9]+-[0-9]+");
+    NSRegularExpression *repeate = regexp(@"[0-9]+x[0-9]+");
+    
+    unsigned int srcFrames = 0;
+    unsigned int dstFrames = 0;
+    unsigned int P = 0;
+    
+    const NSString *BASE_PATH = @"./";
 
-int main(int argc, char *argv[]) {
-    @autoreleasepool {
+    MultiTrackQTMovie::Recorder *setup(MultiTrackQTMovie::Parser *parser, NSString *filename, std::vector<MultiTrackQTMovie::TrackInfo> *info) {        
+        MultiTrackQTMovie::Recorder *recorder = new MultiTrackQTMovie::Recorder(filename,info);
+        return recorder;
+    }
+    
+    void add(MultiTrackQTMovie::Recorder *recorder, MultiTrackQTMovie::Parser *parser, unsigned char *bytes, long length) {
+        if(recorder) {
+            std::string codecType = parser->type(0);
+            if(codecType=="jpeg"||codecType=="png ") {
+                recorder->add((unsigned char *)bytes,length,0,true);
+                dstFrames++;
+            }
+        }
+    }
+    
+    void parse(NSString *commands, NSString *dst) {
         
         bool load = false;
-        
-        int srcFrames = 0;
-        int dstFrames = 0;
         
         std::vector<MultiTrackQTMovie::TrackInfo> info;
         MultiTrackQTMovie::Recorder *recorder = nullptr;
         MultiTrackQTMovie::Parser *parser = nullptr;
         
-        if(argc==2||argc==3) {
+        NSMutableDictionary *colors = nil;
+        
+        std::string codecType = "";
+        
+        NSArray *arr = [commands componentsSeparatedByString:@","];
+        for(int n=0; n<arr.count; n++) {
             
-            NSString *dst = nil;
-            
-            if(argc==3&&[[NSString stringWithFormat:@"%s",argv[2]] hasSuffix:@".mov"]) {
-                dst = [NSString stringWithFormat:@"%s",argv[2]];
-            }
-            
-            NSRegularExpression *number = regexp(@"[0-9]+");
-            NSRegularExpression *range = regexp(@"[0-9]+-[0-9]+");
-            NSRegularExpression *repeate = regexp(@"[0-9]+x[0-9]+");
-
-            NSString *commands = [NSString stringWithFormat:@"%s",argv[1]];
-            NSArray *arr = [commands componentsSeparatedByString:@","];
-            for(int n=0; n<arr.count; n++) {
-                
-                NSString *command = arr[n];
-                NSRange mask = NSMakeRange(0,command.length);
-                
-                if([command hasSuffix:@".mov"]) {
-                    if(!parser) {
-                        NSError *err = nil;
-                        [[NSFileManager defaultManager] attributesOfItemAtPath:command error:&err];
+            NSString *command = arr[n];
+            NSRange mask = NSMakeRange(0,command.length);
                         
-                        if(!err) {
-                            parser = new MultiTrackQTMovie::Parser(command);
-                            if(parser->type(0)=="jpeg") {
-                                srcFrames = parser->length(0);
-                                info.push_back({.width=parser->width(0),.height=parser->height(0),.depth=24,.fps=30.,.type=parser->type(0)});
-                                load = true;
-                                continue;
+            if([command hasSuffix:@".mov"]) {
+                if(!parser) {
+                                        
+                    NSError *err = nil;
+                    [[NSFileManager defaultManager] attributesOfItemAtPath:command error:&err];
+                    if(!err) {
+                        parser = new MultiTrackQTMovie::Parser(command);
+                        codecType = parser->type(0);
+                        bool isSupport = false;
+                        for(int k=0; k<supportedCodecs.count; k++) {
+                            if(codecType==[supportedCodecs[k] UTF8String]) {
+                                isSupport = true;
+                                break;
                             }
                         }
                         
-                    }
-                    else {
-                        NSLog(@".mov is already loaded");
-                        break;
-                    }
-                }
-                
-                if(load) {
-                    
-                    NSTextCheckingResult *match;
-                    
-                    match = [range firstMatchInString:command options:0 range:mask];
-                    if(match) {
-                        NSArray *tmp = [command componentsSeparatedByString:@"-"];
-                        if(tmp.count==2) {
-                            int begin = [tmp[0] intValue];
-                            int end = [tmp[1] intValue];
-                            if(begin<=end) {
-                                if(end<srcFrames) {
-                                    if(!recorder) recorder = new MultiTrackQTMovie::Recorder(dst,&info);
-                                    for(int k=begin; k<=end; k++) {
-                                        NSData *data = parser->get(k,0);
-                                        recorder->add((unsigned char *)data.bytes,data.length,0);
-                                        dstFrames++;
-                                    }
-                                    continue;
+                        if(isSupport) {
+                            srcFrames = parser->length(0);
+                            info.push_back({.width=parser->width(0),.height=parser->height(0),.depth=24,.fps=30.,.type=parser->type(0)});
+                            if(codecType=="avc1"||codecType=="hvc1") {
+                                NSError *err = nil;
+                                NSString *path = @"./colors.json";
+                                NSString *json= [[NSString alloc] initWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&err];
+                                if(err==nil) {
+                                    NSData *jsonData = [json dataUsingEncoding:NSUnicodeStringEncoding];
+                                    err = nil;
+                                    colors = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&err];
+                                    if(err!=nil) colors = nil;
                                 }
                             }
-                            else {
-                                if(begin<srcFrames) {
-                                    if(!recorder) recorder = new MultiTrackQTMovie::Recorder(dst,&info);
-                                    for(int k=begin; k>=end; k--) {
-                                        NSData *data = parser->get(k,0);
-                                        recorder->add((unsigned char *)data.bytes,data.length,0);
-                                        dstFrames++;
-                                    }
-                                    continue;
-                                }
-                            }
+                            load = true;
+                            continue;
                         }
-                    }
-                    
-                    match = [repeate firstMatchInString:command options:0 range:mask];
-                    if(match) {
-                        NSArray *tmp = [command componentsSeparatedByString:@"x"];
-                        if(tmp.count==2) {
-                            int frame = [tmp[0] intValue];
-                            int times = [tmp[1] intValue];
-                            if(frame<srcFrames) {
-                                if(!recorder) recorder = new MultiTrackQTMovie::Recorder(dst,&info);
-                                for(int k=0; k<times; k++) {
-                                    NSData *data = parser->get(frame,0);
-                                    recorder->add((unsigned char *)data.bytes,data.length,0);
-                                    dstFrames++;
-                                }
-                                continue;
-                            }
-                        }
-                    }
-                    
-                    match = [number firstMatchInString:command options:0 range:mask];
-                    if(match) {
-                        if(command.length==match.range.length) {
-                            int frame = [command intValue];
-                            if(frame<srcFrames) {
-                                if(!recorder) recorder = new MultiTrackQTMovie::Recorder(dst,&info);
-                                NSData *data = parser->get(frame,0);
-                                recorder->add((unsigned char *)data.bytes,data.length,0);
-                                dstFrames++;
-                                continue;
-                            }
+                        else {
+                            NSLog(@"%s codec is not supported",codecType.c_str());
                         }
                     }
                 }
                 else {
-                    NSLog(@".mov is not loaded");
+                    NSLog(@".mov is already loaded");
                     break;
                 }
-                
-                NSLog(@"? \"%@\"",command);
             }
+            
+            if(load) {
+                if(colors) {
+                    if(codecType=="avc1"||codecType=="hvc1") {
+                        bool found = false;
+                        for(NSString *color in colors) {
+                            if([command compare:color]==NSOrderedSame) {
+                                NSString *path = [NSString stringWithFormat:@"%@hvc1/%d/%d/%@.bin",BASE_PATH,parser->width(0),parser->height(0),command];
+                                NSError *err = nil;
+                                [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&err];
+                                if(!err) {
+                                    P = 0;
+                                    if(!recorder) recorder = setup(parser,dst,&info);
+                                    NSData *data = file(path);
+                                    add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if(found) continue;
+                    }
+                }
+                
+                NSTextCheckingResult *match;
+                
+                match = [range firstMatchInString:command options:0 range:mask];
+                if(match) {
+                    NSArray *value = [command componentsSeparatedByString:@"-"];
+                    if(value.count==2) {
+                        int begin = [value[0] intValue];
+                        int end = [value[1] intValue];
+                        if(begin<=end) {
+                            if(end<srcFrames) {
+                                if(!recorder) recorder = setup(parser,dst,&info);
+                                for(int k=begin; k<=end; k++) {
+                                    NSData *data = parser->get(k,0);
+                                    add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                                }
+                                continue;
+                            }
+                        }
+                        else {
+                            if(begin<srcFrames) {
+                                if(!recorder) recorder = setup(parser,dst,&info);
+                                for(int k=begin; k>=end; k--) {
+                                    NSData *data = parser->get(k,0);
+                                    add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                }
+                
+                match = [repeate firstMatchInString:command options:0 range:mask];
+                if(match) {
+                    NSArray *value = [command componentsSeparatedByString:@"x"];
+                    if(value.count==2) {
+                        int frame = [value[0] intValue];
+                        int times = [value[1] intValue];
+                        if(frame<srcFrames) {
+                            if(!recorder) recorder = setup(parser,dst,&info);
+                            for(int k=0; k<times; k++) {
+                                NSData *data = parser->get(frame,0);
+                                unsigned char *bytes = (unsigned char *)data.bytes;
+                                add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                            }
+                            continue;
+                        }
+                    }
+                }
+                
+                match = [number firstMatchInString:command options:0 range:mask];
+                if(match) {
+                    if(command.length==match.range.length) {
+                        int frame = [command intValue];
+                        if(frame<srcFrames) {
+                            if(!recorder) recorder = setup(parser,dst,&info);
+                            NSData *data = parser->get(frame,0);
+                            unsigned char *bytes = (unsigned char *)data.bytes;
+                            add(recorder,parser,(unsigned char *)data.bytes,data.length);
+                            continue;
+                        }
+                    }
+                }
+            }
+            else {
+                NSLog(@".mov is not loaded");
+                break;
+            }
+            
+            NSLog(@"? \"%@\"",command);
         }
         
-        NSLog(@"frames = %d",dstFrames);
-        
         if(recorder) {
+            //NSLog(@"%@ (%d)",recorder->path(),dstFrames);
             recorder->save();
             delete recorder;
         }
     }
+    
+};
+
+
+int main(int argc, char *argv[]) {
+    @autoreleasepool {
+        
+        if(argc==2||argc==3) {
+            
+            NSString *filename = nil;
+            
+            if(argc==3&&[[NSString stringWithFormat:@"%s",argv[2]] hasSuffix:@".mov"]) {
+                filename = [NSString stringWithFormat:@"%s",argv[2]];
+            }
+            
+            VideoEditor::parse(
+                [NSString stringWithFormat:@"%s",argv[1]],
+                filename
+            );
+        }
+    }
 }
+    

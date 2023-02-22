@@ -62,6 +62,8 @@ namespace MultiTrackQTMovie {
                 this->_keyframes = new std::vector<bool>[this->_info->size()];
             }
         
+            NSString *path() { return this->_fileName; }
+        
             bool isVPS() { return this->_vps?true:false; }
             void setVPS(NSData *data) { this->_vps = [[NSData alloc] initWithData:data]; }
             
