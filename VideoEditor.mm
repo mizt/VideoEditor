@@ -44,7 +44,7 @@ namespace VideoEditor {
             unsigned char *bytes = (unsigned char *)data.bytes;
             long length = data.length;
             
-            std::string codecType = parser->type(0);
+            std::string codecType = parser->codec(0);
             if(codecType=="jpeg"||codecType=="png ") {
                 recorder->add((unsigned char *)bytes,length,0,true);
                 dstFrames++;
@@ -96,7 +96,7 @@ namespace VideoEditor {
                     
                     if(!err) {
                         parser = new MultiTrackQTMovie::Parser(path);
-                        codecType = parser->type(0);
+                        codecType = parser->codec(0);
                         bool isSupport = false;
                         for(int k=0; k<supportedCodecs.count; k++) {
                             if(codecType==[supportedCodecs[k] UTF8String]) {
@@ -107,7 +107,7 @@ namespace VideoEditor {
                         
                         if(isSupport) {
                             srcFrames = parser->length(0);
-                            info.push_back({.width=parser->width(0),.height=parser->height(0),.depth=24,.fps=30.,.type=parser->type(0)});
+                            info.push_back({.width=parser->width(0),.height=parser->height(0),.depth=24,.fps=30.,.codec=parser->codec(0)});
                             if(codecType=="avc1"||codecType=="hvc1") {
                                 NSError *err = nil;
                                 NSString *path = @"./colors.json";
@@ -212,8 +212,8 @@ namespace VideoEditor {
             NSLog(@"? \"%@\"",command);
         }
         
+        
         if(recorder) {
-            //NSLog(@"%@ (%d)",recorder->path(),dstFrames);
             recorder->save();
             delete recorder;
         }
@@ -237,7 +237,17 @@ int main(int argc, char *argv[]) {
                 [NSString stringWithFormat:@"%s",argv[1]],
                 filename
             );
+            
+            __block bool isWait = true;
+            
+            EventEmitter::on(MultiTrackQTMovie::Event::SAVE_COMPLETE,^(NSNotification *notification) {
+                NSLog(@"SAVE_COMPLETE");
+            });
+            
+            while(true) {
+                if(!isWait) break;
+                [NSThread sleepForTimeInterval:(1.0/300.)];
+            }
         }
     }
 }
-    
