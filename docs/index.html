@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>VideoEditor</title>
+		<meta charset="utf-8">
+		<meta name="robots" content="noindex, nofollow">
+		<link rel="icon" href="data:;base64,=">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			
+			* {
+				margin:0;
+				padding:0;
+			}
+			
+			body {
+				font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,Courier,monospace;
+				width:100dvw;
+				background:#FFF;
+			}
+			
+			div {
+				padding:0 44px 22px 44px;
+				overflow:hidden;
+			}
+			
+			a {
+				display:inline-block;
+				margin-bottom:22px;
+				font-size:13px;
+				line-height:22px;
+				padding:11px 15px;
+				background:#9FD;
+				color:#333;
+				text-decoration:none;
+			}
+			
+			span {
+				font-size:12px;
+				line-height:12px;
+				color:#333;
+			}
+			
+			pre {
+				display:inline-block;
+				margin-top:-1px;
+				margin-bottom:22px;
+				font-size:13px;
+				line-height:22px;
+				padding:11px 15px;
+				background:#000;
+				color:#FFF;
+				tab-size:2;
+				white-space:pre;
+				white-space:pre-wrap;
+				white-space:-pre-wrap;
+				white-space:-o-pre-wrap;
+				white-space:-moz-pre-wrap;
+				white-space:-hp-pre-wrap;
+				word-wrap: break-word; 
+				word-break:break-all;
+			}
+			
+			video {
+				display:block;
+				margin-left:-1px;
+				margin-top:22px;
+				vertical-align:bottom;
+				border:none;
+				outline:none;
+				-webkit-box-sizing:unset;
+				-moz-box-sizing:unset;
+				box-sizing:unset;
+				clip-path: inset(1px 1px);
+			}
+			
+		</style>
+	</head>
+	<body>
+		<div>
+			
+			<a target="_blank" rel="noopener noreferrer" href="https://github.com/mizt/VideoEditor"><p>VideoEditor</p></a>
+			<p><span>Probably only works in Safari.</span></p>
+			<video src="./00.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59 ./docs/00.mov</pre>
+		
+			<video src="./01.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,{0-59} ./docs/01.mov</pre>
+			
+			<video src="./02.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,{59-0} ./docs/02.mov</pre>
+			
+			<video src="./03.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,{15-44},{15-44} ./docs/03.mov</pre>
+			
+			<video src="./04.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,{{0-29}+15} ./docs/04.mov</pre>
+			
+			<video src="./05.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,{0-59}x3 ./docs/05.mov</pre>
+			
+			<video src="./06.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,2x{0-29}+1 ./docs/06.mov</pre>
+			
+			<video src="./07.mov" controls muted autoplay loop playsinline></video>
+			<pre>$ ./VideoEditor ./src.mov,{3x{0-19}+2}x3 ./docs/07.mov</pre>
+			
+		</div>
+	</body>
+</html>
