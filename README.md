@@ -17,6 +17,9 @@ $ ./VideoEditor ./src.mov,{{0-29}+15} ./docs/04.mov
 $ ./VideoEditor ./src.mov,{0-59}x3 ./docs/05.mov
 $ ./VideoEditor ./src.mov,2x{0-29}+1 ./docs/06.mov
 $ ./VideoEditor ./src.mov,{3x{0-19}+2}x3 ./docs/07.mov
+$ ./VideoEditor ./src.mov,rand{}x30 ./docs/08.mov
+$ ./VideoEditor ./src.mov,rand{59}x30 ./docs/09.mov
+$ ./VideoEditor ./src.mov,rand{0-59}x30 ./docs/10.mov
 ```
 
 #### Arguments

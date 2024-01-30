@@ -472,6 +472,7 @@ namespace VideoEditor {
 int main(int argc, char *argv[]) {
     @autoreleasepool {
         if(argc==2||argc==3) {
+            srandom(CFAbsoluteTimeGetCurrent());
             NSString *filename = nil;
             if(argc==3&&[[NSString stringWithFormat:@"%s",argv[2]] hasSuffix:@".mov"]) {
                 filename = [NSString stringWithFormat:@"%s",argv[2]];
